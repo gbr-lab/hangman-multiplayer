@@ -1,74 +1,73 @@
 export class HangmanRenderer {
-        constructor(canvas) {
-                this.canvas = canvas;
-                        this.ctx = canvas.getContext('2d');
-                            }
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+  }
 
-                                clear() {
-                                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                                            }
+  clear() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
 
-                                                drawGallows() {
-                                                        const ctx = this.ctx;
-                                                                ctx.strokeStyle = '#333';
-                                                                        ctx.lineWidth = 3;
-                                                                                ctx.beginPath();
-                                                                                        ctx.moveTo(20, 230); ctx.lineTo(100, 230);
-                                                                                                ctx.moveTo(60, 230); ctx.lineTo(60, 20);
-                                                                                                        ctx.moveTo(60, 20); ctx.lineTo(140, 20);
-                                                                                                                ctx.moveTo(140, 20); ctx.lineTo(140, 50);
-                                                                                                                        ctx.stroke();
-                                                                                                                            }
+  drawGallows() {
+    const ctx = this.ctx;
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(20, 230); ctx.lineTo(100, 230);
+    ctx.moveTo(60, 230); ctx.lineTo(60, 20);
+    ctx.moveTo(60, 20); ctx.lineTo(140, 20);
+    ctx.moveTo(140, 20); ctx.lineTo(140, 50);
+    ctx.stroke();
+  }
 
-                                                                                                                                drawStickman(errors, customConfig = { color: '#000000', accessory: 'none' }) {
-                                                                                                                                        this.drawGallows();
-                                                                                                                                                const ctx = this.ctx;
-                                                                                                                                                        ctx.strokeStyle = customConfig.color || '#000000';
-                                                                                                                                                                ctx.fillStyle = customConfig.color || '#000000';
-                                                                                                                                                                        ctx.lineWidth = 2;
+  drawStickman(errors, customConfig = { color: '#000000', accessory: 'none' }) {
+    this.drawGallows();
+    const ctx = this.ctx;
+    ctx.strokeStyle = customConfig.color || '#000000';
+    ctx.fillStyle = customConfig.color || '#000000';
+    ctx.lineWidth = 2;
 
-                                                                                                                                                                                if (errors >= 1) {
-                                                                                                                                                                                            ctx.beginPath();
-                                                                                                                                                                                                        ctx.arc(140, 70, 20, 0, Math.PI * 2);
-                                                                                                                                                                                                                    ctx.stroke();
-                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                            if (customConfig.accessory === 'hat') {
-                                                                                                                                                                                                                                                            ctx.fillRect(125, 42, 30, 8);
-                                                                                                                                                                                                                                                                            ctx.fillRect(132, 32, 16, 10);
-                                                                                                                                                                                                                                                                                        } else if (customConfig.accessory === 'beard') {
-                                                                                                                                                                                                                                                                                                        ctx.beginPath();
-                                                                                                                                                                                                                                                                                                                        ctx.arc(140, 80, 10, 0, Math.PI);
-                                                                                                                                                                                                                                                                                                                                        ctx.fill();
-                                                                                                                                                                                                                                                                                                                                                    } else if (customConfig.accessory === 'glasses') {
-                                                                                                                                                                                                                                                                                                                                                                    ctx.strokeRect(130, 62, 9, 7);
-                                                                                                                                                                                                                                                                                                                                                                                    ctx.strokeRect(141, 62, 9, 7);
-                                                                                                                                                                                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                                                                                                                                                                                                                if (errors >= 2) {
-                                                                                                                                                                                                                                                                                                                                                                                                                            ctx.beginPath();
-                                                                                                                                                                                                                                                                                                                                                                                                                                        ctx.moveTo(140, 90); ctx.lineTo(140, 150);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                    ctx.stroke();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                    if (errors >= 3) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ctx.beginPath();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ctx.moveTo(140, 110); ctx.lineTo(110, 130);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ctx.stroke();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        if (errors >= 4) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ctx.beginPath();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ctx.moveTo(140, 110); ctx.lineTo(170, 130);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ctx.stroke();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            if (errors >= 5) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ctx.beginPath();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ctx.moveTo(140, 150); ctx.lineTo(120, 190);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ctx.stroke();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                if (errors >= 6) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ctx.beginPath();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ctx.moveTo(140, 150); ctx.lineTo(160, 190);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ctx.stroke();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+    if (errors >= 1) {
+      ctx.beginPath();
+      ctx.arc(140, 70, 20, 0, Math.PI * 2);
+      ctx.stroke();
 
+      if (customConfig.accessory === 'hat') {
+        ctx.fillRect(125, 42, 30, 8);
+        ctx.fillRect(132, 32, 16, 10);
+      } else if (customConfig.accessory === 'beard') {
+        ctx.beginPath();
+        ctx.arc(140, 80, 10, 0, Math.PI);
+        ctx.fill();
+      } else if (customConfig.accessory === 'glasses') {
+        ctx.strokeRect(130, 62, 9, 7);
+        ctx.strokeRect(141, 62, 9, 7);
+      }
+    }
+    if (errors >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(140, 90); ctx.lineTo(140, 150);
+      ctx.stroke();
+    }
+    if (errors >= 3) {
+      ctx.beginPath();
+      ctx.moveTo(140, 110); ctx.lineTo(110, 130);
+      ctx.stroke();
+    }
+    if (errors >= 4) {
+      ctx.beginPath();
+      ctx.moveTo(140, 110); ctx.lineTo(170, 130);
+      ctx.stroke();
+    }
+    if (errors >= 5) {
+      ctx.beginPath();
+      ctx.moveTo(140, 150); ctx.lineTo(120, 190);
+      ctx.stroke();
+    }
+    if (errors >= 6) {
+      ctx.beginPath();
+      ctx.moveTo(140, 150); ctx.lineTo(160, 190);
+      ctx.stroke();
+    }
+  }
 }
