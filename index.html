@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Impiccato Multiplayer con Vite</title>
+  <title>Impiccato Multiplayer</title>
   <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -11,45 +11,53 @@
 
     <!-- MENU PRINCIPALE -->
     <div id="menu-screen" class="screen active">
-      <h1>Impiccato Multiplayer</h1>
-      <div class="menu-box">
-        <input type="text" id="username-input" placeholder="Il tuo nickname" maxlength="15">
-        <button id="create-room-btn" class="btn primary">Crea Stanza</button>
-        <div class="join-section">
-          <input type="text" id="room-code-input" placeholder="Codice Stanza" maxlength="6">
-          <button id="join-room-btn" class="btn secondary">Entra con Codice</button>
+      <div class="topbar">
+        <span class="logo">✎ Impiccato Online</span>
+      </div>
+
+      <div class="paper hero-paper">
+        <span class="tape">GIOCO TRA AMICI</span>
+        <h1>IMPICCATO</h1>
+        <p class="lead">Una parola segreta, un foglio di carta e sei tentativi sbagliati.</p>
+
+        <div class="menu-form">
+          <label>Il tuo nome
+            <input type="text" id="username-input" placeholder="Es. Marco" maxlength="15">
+          </label>
+
+          <label class="color-label">Colore del tuo Stickman
+            <input type="color" id="skin-color" value="#000000">
+          </label>
+
+          <div class="button-row">
+            <button id="create-room-btn" class="btn primary">Crea Partita</button>
+          </div>
+
+          <div class="join-section">
+            <input type="text" id="room-code-input" placeholder="Codice Stanza" maxlength="6">
+            <button id="join-room-btn" class="btn secondary">Entra con Codice</button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- STANZA DI ATTESA / PERSONALIZZAZIONE -->
     <div id="room-screen" class="screen">
-      <h2>Stanza: <span id="display-room-code">------</span></h2>
+      <h2>Stanza: <span id="display-room-code" title="Tocca per copiare">------</span></h2>
+      <button id="share-link-btn" class="btn secondary small">🔗 Condividi link invito</button>
+
       <div class="room-content">
-        <div class="players-list-box">
+        <div class="players-list-box card">
           <h3>Giocatori</h3>
           <ul id="players-ul"></ul>
         </div>
 
-        <div class="customization-box">
+        <div class="customization-box card hidden" id="room-customization">
           <h3>Personalizza il tuo Stickman</h3>
-          <div class="avatar-preview-container">
-            <canvas id="avatar-canvas" width="100" height="120"></canvas>
-          </div>
-          <div class="custom-controls">
-            <label>Colore: <input type="color" id="skin-color" value="#000000"></label>
-            <label>Accessorio:
-              <select id="accessory-select">
-                <option value="none">Nessuno</option>
-                <option value="hat">Cappellino</option>
-                <option value="beard">Barba</option>
-                <option value="glasses">Occhiali</option>
-              </select>
-            </label>
-          </div>
+          <label>Colore: <input type="color" id="skin-color-room" value="#000000"></label>
         </div>
 
-        <div class="settings-box" id="host-settings">
+        <div class="settings-box card" id="host-settings">
           <h3>Impostazioni Partita</h3>
           <label>Round:
             <select id="rounds-select">
@@ -60,8 +68,8 @@
           </label>
           <label>Difficoltà:
             <select id="difficulty-select">
-              <option value="easy">Facile (Parole semplici)</option>
-              <option value="medium" selected>Medio</option>
+              <option value="easy">Facile (vocali segnate)</option>
+              <option value="medium" selected>Medio (vocali segnate)</option>
               <option value="hard">Difficile</option>
             </select>
           </label>
@@ -74,7 +82,7 @@
 
     <!-- SCHERMO DI GIOCO -->
     <div id="game-screen" class="screen">
-      <div id="room-badge" title="Codice Stanza per riconnessione">Codice: <span id="hud-room-code">------</span></div>
+      <div id="room-badge" title="Tocca per copiare il codice">Codice: <span id="hud-room-code">------</span></div>
 
       <div class="game-header">
         <div id="round-info">Round 1/5</div>
@@ -86,16 +94,35 @@
           <canvas id="hangman-canvas" width="200" height="250"></canvas>
         </div>
         <div class="word-area">
+          <div id="category-display" class="hidden"></div>
           <div id="word-display">_ _ _ _ _</div>
-          <div id="hint-display">Indizio: -</div>
+          <div id="hints-display"></div>
           <div id="role-announcement">Preparazione...</div>
         </div>
       </div>
 
       <div id="word-creator-panel" class="panel hidden">
         <h3>Tocca a te scrivere la parola!</h3>
+
+        <label>Categoria
+          <select id="category-select">
+            <option value="">Nessuna categoria</option>
+            <option value="Film">Film</option>
+            <option value="Personaggi">Personaggi</option>
+            <option value="Musica">Musica</option>
+            <option value="Sport">Sport</option>
+            <option value="Animali">Animali</option>
+            <option value="Cibo">Cibo</option>
+            <option value="Geografia">Geografia</option>
+            <option value="Videogiochi">Videogiochi</option>
+          </select>
+        </label>
+
         <input type="text" id="secret-word-input" placeholder="Inserisci parola">
-        <input type="text" id="secret-hint-input" placeholder="Inserisci indizio">
+
+        <div id="hints-input-list"></div>
+        <button id="add-hint-btn" type="button" class="btn secondary small">+ Aggiungi indizio</button>
+
         <button id="submit-word-btn" class="btn primary">Invia Parola</button>
       </div>
 
@@ -105,9 +132,10 @@
 
       <!-- CHAT TESTUALE A SCOMPARSA -->
       <div id="chat-container" class="collapsed">
-        <button id="chat-toggle-btn">💬 Chat</button>
+        <button id="chat-toggle-btn">💬 Chat <span id="chat-badge" class="hidden">🔔</span></button>
         <div id="chat-box">
           <div id="chat-messages"></div>
+          <button id="chat-scroll-bottom-btn" class="hidden">↓</button>
           <div class="chat-input-area">
             <input type="text" id="chat-input" placeholder="Scrivi un messaggio...">
             <button id="chat-send-btn">Invia</button>
@@ -118,7 +146,6 @@
 
   </div>
 
-  <!-- Script principale gestito da Vite -->
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
