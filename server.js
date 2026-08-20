@@ -19,6 +19,7 @@ app.get('*', (req, res, next) => {
 });
 
 const rooms = {};
+const VOWELS = new Set(['a', 'e', 'i', 'o', 'u', 'à', 'è', 'é', 'ì', 'ò', 'ù']);
 
 function generateRoomCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -31,6 +32,22 @@ function connectedPlayers(room) {
 function canStart(room) {
   const active = connectedPlayers(room);
   return active.length >= 2 && active.every(p => p.ready);
+}
+
+function buildMasked(word, guessedLetters, difficulty) {
+  return word
+    .split('')
+    .map(ch => {
+      if (ch === ' ') return ' ';
+      if (guessedLetters.includes(ch)) return ch;
+      if (difficulty !== 'hard' && VOWELS.has(ch)) return '+';
+      return '_';
+    })
+    .join(' ');
+}
+
+function isWordComplete(word, guessedLetters) {
+  return word.split('').every(ch => ch === ' ' || guessedLetters.includes(ch));
 }
 
 function updateRoomState(roomCode) {
@@ -80,31 +97,39 @@ io.on('connection', (socket) => {
       return socket.emit('error-message', 'Stanza non trovata!');
     }
 
-    // Riconnessione: stesso username, anche se era stato marcato "disconnesso"
     const existingPlayer = room.players.find(p => p.username === username);
+    let isHost;
     if (existingPlayer) {
       existingPlayer.id = socket.id;
       existingPlayer.customization = customization;
       existingPlayer.connected = true;
-      socket.join(roomCode);
-      socket.emit('room-joined', { roomCode, isHost: existingPlayer.isHost });
-      updateRoomState(roomCode);
-      return;
+      isHost = existingPlayer.isHost;
+    } else {
+      room.players.push({
+        id: socket.id,
+        username,
+        customization,
+        isHost: false,
+        ready: false,
+        score: 0,
+        connected: true
+      });
+      isHost = false;
     }
 
-    room.players.push({
-      id: socket.id,
-      username,
-      customization,
-      isHost: false,
-      ready: false,
-      score: 0,
-      connected: true
-    });
-
     socket.join(roomCode);
-    socket.emit('room-joined', { roomCode, isHost: false });
+    socket.emit('room-joined', { roomCode, isHost });
     updateRoomState(roomCode);
+
+    if (room.gameState && room.gameState.secretWord) {
+      if (socket.id !== room.gameState.writerId) {
+        socket.emit('guess-turn-start', {
+          maskedWord: buildMasked(room.gameState.secretWord, room.gameState.guessedLetters, room.settings.difficulty),
+          category: room.gameState.category,
+          hints: room.gameState.hints
+        });
+      }
+    }
   });
 
   socket.on('update-customization', ({ roomCode, customization }) => {
@@ -130,7 +155,6 @@ io.on('connection', (socket) => {
     updateRoomState(roomCode);
   });
 
-  // L'host avvia manualmente la partita quando tutti sono pronti
   socket.on('start-match', ({ roomCode }) => {
     const room = rooms[roomCode];
     if (!room) return;
@@ -140,46 +164,41 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('submit-word', ({ roomCode, word, hint }) => {
+  socket.on('submit-word', ({ roomCode, word, category, hints }) => {
     const room = rooms[roomCode];
     if (!room || !room.gameState) return;
     if (room.gameState.writerId !== socket.id) return;
 
-    room.gameState.secretWord = word;
-    room.gameState.hint = hint;
-    room.gameState.maskedWord = word.split('').map(() => '_').join(' ');
+    const cleanWord = word.toLowerCase();
+    const cleanHints = (hints || []).map(h => h.trim()).filter(Boolean).slice(0, 3);
+
+    room.gameState.secretWord = cleanWord;
+    room.gameState.category = category || '';
+    room.gameState.hints = cleanHints;
     room.gameState.errors = 0;
     room.gameState.guessedLetters = [];
 
-    io.to(roomCode).emit('guess-turn-start', {
-      maskedWord: room.gameState.maskedWord,
-      hint,
-      customConfig: {}
+    const maskedWord = buildMasked(cleanWord, [], room.settings.difficulty);
+
+    io.to(roomCode).except(socket.id).emit('guess-turn-start', {
+      maskedWord,
+      category: room.gameState.category,
+      hints: room.gameState.hints
     });
   });
 
   socket.on('make-guess', ({ roomCode, letter }) => {
     const room = rooms[roomCode];
     if (!room || !room.gameState) return;
-    if (room.gameState.writerId === socket.id) return; // chi scrive non indovina
+    if (room.gameState.writerId === socket.id) return;
 
     const state = room.gameState;
     if (state.guessedLetters.includes(letter)) return;
     state.guessedLetters.push(letter);
 
-    const word = state.secretWord;
-    let hit = false;
-    let newMasked = '';
-
-    for (let i = 0; i < word.length; i++) {
-      if (word[i] === letter || state.guessedLetters.includes(word[i])) {
-        newMasked += word[i] + ' ';
-        if (word[i] === letter) hit = true;
-      } else {
-        newMasked += '_ ';
-      }
-    }
-    state.maskedWord = newMasked.trim();
+    const hit = state.secretWord.includes(letter);
+    const maskedWord = buildMasked(state.secretWord, state.guessedLetters, room.settings.difficulty);
+    state.maskedWord = maskedWord;
 
     const currentPlayer = room.players.find(p => p.id === socket.id);
 
@@ -190,12 +209,12 @@ io.on('connection', (socket) => {
     }
 
     io.to(roomCode).emit('update-game-state', {
-      maskedWord: state.maskedWord,
+      maskedWord,
       errors: state.errors,
       customConfig: currentPlayer ? currentPlayer.customization : {}
     });
 
-    if (!state.maskedWord.includes('_')) {
+    if (isWordComplete(state.secretWord, state.guessedLetters)) {
       if (currentPlayer) currentPlayer.score += 15;
       endRound(roomCode, `Parola indovinata! Era: ${state.secretWord}`);
     } else if (state.errors >= 6) {
@@ -220,7 +239,6 @@ io.on('connection', (socket) => {
 
       player.connected = false;
 
-      // Se se ne va l'host, passa il ruolo al primo giocatore ancora connesso
       if (player.isHost) {
         const nextHost = room.players.find(p => p.connected);
         if (nextHost) {
@@ -257,7 +275,8 @@ function startNewGame(roomCode) {
   room.gameState = {
     writerId: writer.id,
     secretWord: '',
-    hint: '',
+    category: '',
+    hints: [],
     maskedWord: '',
     errors: 0,
     guessedLetters: []
@@ -284,7 +303,7 @@ function endRound(roomCode, message) {
   });
 
   setTimeout(() => {
-    if (!rooms[roomCode]) return; // la stanza potrebbe essere stata chiusa nel frattempo
+    if (!rooms[roomCode]) return;
 
     if (room.gameSession.currentRound < room.gameSession.maxRounds) {
       room.gameSession.currentRound++;
